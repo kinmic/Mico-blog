@@ -1,0 +1,150 @@
+---
+title: "The layers of ggplot"
+author: "Mico"
+date: "07/03/20237"
+categories: [r, ggplot, data-viz]
+image: "imge.png"
+---
+
+ Some debates are as old as time and seem like they will never be resolved, with both side firmly entrenched in their camp. The wire Vs Sopranos ,  McDonalds Vs Burger King, Double denim : Yay or Nay ( hard yay). While maybe not as old as these heavy hitters of division, there is an ongoing debate among r users which is no less intense. Plotting: Plot or GGplot? Proponents of one cannot fathom how users of the other manage to put their pants on the right way round, let alone create beautiful graphics. The plot () function is the base r plotting method. Its internal to r, stable and unlikely to be tripped up by pesky dependencies. GGplot, on the other hand is the tidyverse plotting package. As with all things tidy, Hadley Wickham (The architect of the tidyverse), emphasizes human-readable code and the use of tidy data. While its unlikely that your grandmother (Or maybe she could, mine struggles with the microwave), could figure out a ggplot call, the aim of human readable code is that someone with a reasonably good grasp of the data and a basic understanding of the ggplot framework, can craft publication-level graphics with relative ease. More importantly, they can pull code from github or a friend, edit the data calls, and hey presto , you've beautiful graphics without a headache. 
+
+\
+
+ The key part to unlocking the potential of ggplot is to understand the framework behind it, specifically 'The Layered Grammar of Graphics' as Wickham puts it . Wickham offers a comprehensive and detailed explanation of the layered grammar of graphics in his [paper of the same name](https://www.tandfonline.com/doi/abs/10.1198/jcgs.2009.07098) but this is grad school and there is a never ending number of papers ( have read, to read, must read, of interest). So here's a synopsis of the layered grammar of graphics. Enjoy
+
+\
+
+## Layer 1. Dataset and set of mappings from variables to aesthetics.
+
+\
+
+So you have your dataset ( if you dont, I can do nothing for you). You have your data in tidy format, where each column is  variable, each row an observation and each cell a value. Great, now what? The aim of this layer is to tell ggplot *what* you want and where you want it. In terms of what, we mean variables ( height, weight, age?) and you can think of where as the axis (X, Y). Additionally, we can also specify if we want to colour the data by another variable ( colour = variable_name ). All this gets wrapped in an aesthetics function aes(). And place in the ggplot. So lets say I want a plot of . For the example plots here, I'll use the mtcars dataset, which comes handily pre-loaded with r.
+
+```{r}
+library(ggplot2)
+ggplot(mtcars, aes(x= mpg, y = disp, colour = gear))
+
+
+```
+
+So that's out plot, with miles per gallon (`mpg`) on the x-axis and engine displacement (`disp`) on the y-axis. The shrewd observers among you may have a noticed something strange, *there isn't any actual data on the plot*. Which takes us nicely to our second layer.
+
+\
+
+## Layer 2. One or more layers, each having a geometric object, dataset and aesthetic mappings).
+
+This layers lets us tells ggplot *how* to plot our data . We can choose from a whole range of plot types (which can be found in the ggplot2 help files), but for our example lets say we want a scatterplot (geom_point). We simply add a ' + ' to our data call which tells ggplot we want the next layer, and specify our geometry type.
+
+```{r}
+
+ggplot(mtcars, aes(x= mpg, y = disp, colour = gear))+
+  geom_point()
+```
+
+And there's our scatterplot. We can see ggplot has coloured the points by the number of gears, which is specified as a numeric datatype in the dataset. A car isn't going to have partial cylinders ( e.g 3.6, 4.9) but ggplot doesn't know that, so we need to specify it in layer 1
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()
+
+```
+
+\
+
+## Layer 3. Once scale for each aesthetic mapping used
+
+Here, were simply telling ggplot what scale we want to plot on. Maybe we want our x axis to scaled as continuous data {r scale_x\_continous} or maybe were plotting a timeseries and would prefer data (scale_x\_datime). The same can be done for for the y using the same code, just replacing x for y. We can also specify where we want the breaks, lets say every 10 units from zero to 40. `scale_x_continous( breaks = seq(10,40, by = 10)` and maybe we want to set the labels too.
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))
+
+```
+
+The reason 40 doesn't appear on the plot is simple, our mpg data doesn't have any values over 40. We can also adjust the colours for our colours (adding another plus after our previous call).
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  
+  geom_point()+
+  
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))+
+  
+  scale_colour_manual(values = c("green","white","orange")) # changing colours
+```
+
+We can do the same for the y-axis using the same commands but swapping out x for y.\
+
+## Layer 4: Coordinate systems
+
+Coordinate systems lets us specify how the plot is displayed to us. This layer is extremely useful if working with geolocation data ( latitude and longitude) or we want to zoom in on a section of the plot. While sometimes useful, this layer can be largely ignored for day to day plotting. That being said, the `coord_flip()` function ( flip the axes) and the `coord_trans()` (transform the plot scale, such as logarithmic transformation).
+
+\
+Using `coord_flip()`
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))+
+  
+  scale_colour_manual(values = c("green","white","orange")) +
+  
+  coord_flip()
+```
+
+\
+Using `coord_trans()` we could get the transform our y axis to the log with base 10 of the input values:
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))+
+  
+  scale_colour_manual(values = c("green","white","orange"))+ 
+  
+  coord_trans(y = "log10") # log base 10 transformation of y axis
+```
+
+## Layer 5: Facetting
+
+This is maybe the best feature of ggplot. You've created a plot which shows what you nice and clearly. You then meet meet with your ( graduate advisor, boss, annoying friend) who says "Wow!! Thats amazing, I wonder is that effect the same across months or seasons?" Having firmly burst you beautifu graphics bubble, you trapse back to you lab, open R, and start sub setting, copying and pasting and swearing under your breath that you should have stayed a field scientist. If only there were a better way....... *Enter facets ( stage left)*. The facet function in ggplot plot creates the plot as specified, but with a different panel for each level in the facetting variable.
+
+Lets say you want to see our displacement - mpg relationship for automatic vs manual cars. In our dataset, transmission type is rerecorded as 'am' and coded as: automatic = 0 , manual = 1.
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))+
+  
+    scale_colour_manual(values = c("green","white","orange"))+
+  
+  facet_wrap(~am)
+```
+
+Isn't that just dandy. You can also create grids of two variables. Lets look at transmission type and number of carburetors.
+
+```{r}
+ggplot(mtcars, aes(x= mpg, y = disp, colour = as.factor(gear)))+
+  geom_point()+
+  scale_x_continuous(breaks = seq(from = 10, to = 40, by = 10),
+                     labels = c("10 mpg","20 mpg", "30 mpg", "40 mpg"))+
+  
+    scale_colour_manual(values = c("green","white","orange"))+
+  
+  facet_grid(cyl~am)
+```
+
+\
+So there it is, ggplot() in a nutshell. If your interested in learning more, I encourage you to read Wickhams paper and take a look at the [introduction to ggplot vignette](https://ggplot2.tidyverse.org/) While building plots from scratch can be great for understanding our data or for some project-unique analysis, we should keep the words of one of the greatest modern artists Pablo Picasso in mind:
+
+<h3>*"good artists borrow, great artists steal."*.</h3>
+
+Now as scientists, stealing is shall we say, a no-no. But R is open source and intended to be shared so check out the [R graphics Gallery](https://r-graph-gallery.com/) and steal some great plots. Use your own data, turn different layers on and off ( using \# before the code) and enjoy being on the ggplot ( read right) side of history.
+
+## 
